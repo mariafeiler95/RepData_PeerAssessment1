@@ -1,14 +1,4 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-author: "Maria E Feiler"
-output: 
-  html_document:
-    keep_md: true
----
-
-## Loading and preprocessing the data
-First create teh file in your working directory, download the data, and unzip the file. 
-```{r}
+## Downloading, unziping, and loading data into RStudio
 filename <- "activity.zip"
 if (!file.exists(filename)){
         fileURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
@@ -17,17 +7,13 @@ if (!file.exists(filename)){
 if (file.exists("activity.zip")) { 
         unzip(filename) 
 }
-```
 
-Then read the data into R and change the class of the date column to "Date."
-```{r}
 activity <- read.csv("activity.csv")
-activity$date <- as.Date(activity$date, format="%Y-%m-%d")
-```
 
-## What is mean total number of steps taken per day?
-First, calculate the step sums per day and create a histogram.
-``` {r, fig.width = 10, fig.height = 8}
+## Cleaning data for analysis
+activity$date <- as.Date(activity$date, format="%Y-%m-%d")
+
+## Calculating and plotting mean number of steps taken per day
 activity1 <- activity[!is.na(activity$steps),]
 stepsums <- with(activity, tapply(steps, as.factor(activity$date), sum, na.rm = TRUE))
 
@@ -35,16 +21,10 @@ hist(stepsums,
      main = "Total Number of Steps Taken per Day", 
      xlab = "Total Step Count",
      ylab = "Frequency")
-```
 
-Then, look at the summary of the step sums for the median and mean. 
-``` {r}
 summary(stepsums)
-```
 
-## What is the average daily activity pattern?
-First, calculate the step means per interval and create a plot
-```{r, fig.width = 10, fig.height = 8}
+## Calculating and plotting average daily activity pattern and interval with max steps
 intervalmeans <- tapply(activity1$steps, activity1$interval, FUN=mean)
 intervals <- levels(as.factor(activity1$interval))
 
@@ -53,45 +33,31 @@ plot(intervals, intervalmeans,
      main = "Time Series Plot of Average Steps Taken",
      xlab = "Interval",
      ylab = "Average Steps Taken")
-```
 
-Then calculate the interval with the most steps. 
-``` {r}
 df_int <- data.frame(intervalmeans, intervals)
 df_int[df_int$intervalmeans == max(df_int$intervalmeans), ][2]
-```
 
-## Imputing missing values
-First, find missing values, calculate average number of steps, and impute into NAs.
-```{r}
+## Finding missing values, calculating average number of steps and imputing into NAs
 activity2 <- activity[is.na(activity$steps),]
+length(activity2$steps)
 meansteps <- with(activity2, tapply(steps, activity2$interval, mean))
 activity2$steps <- meansteps
-```
 
-Next, make a new dataframe with fixed NAs.
-```{r}
+## Making new dataframe with fixed NAs
 activity_fixed <- rbind(activity1, activity2)
 activity_fixed <- activity_fixed[order(activity_fixed$date),]
-```
 
-Finally, replot steps taken per day with new dataframe and calulate the median and mean.
-```{r, fig.width = 10, fig.height = 8}
-stepsums_fixed <- with(activity_fixed, tapply(steps, as.factor(activity_fixed$date), sum))
+## Replotting steps taken per day with new dataframe and calulating median/mean
+stepsums_fixed <- with(activity_fixed, tapply(steps, as.factor(activity_fixed$date), sum, na.rm = TRUE))
 hist(stepsums_fixed, 
      main = "Total Number of Steps Taken per Day", 
      xlab = "Total Step Count",
      ylab = "Frequency")
-```
 
-```{r}
 summary(stepsums)
 summary(stepsums_fixed)
-```
 
-## Are there differences in activity patterns between weekdays and weekends?
-First, make new columns containing the day of the week and the designation of "weekday" or "weekend."
-```{r}
+## Adding day and weekday columns, indicating day of the week and 
 activity_fixed$days <- weekdays(activity$date)
 
 weekend <- grep("Saturday|Sunday", activity_fixed$days, ignore.case = TRUE)
@@ -103,18 +69,4 @@ weekdays_dt <- activity_fixed[weekdays, ]
 weekdays_dt$weekday <- "weekday"
 
 activity_fixed <- rbind(weekend_dt, weekdays_dt)
-```
 
-Then create a plot of the average steps taken on weekdays and weekends.
-```{r, fig.width = 10, fig.height = 8}
-library(ggplot2)
-stepmeans <- aggregate(steps ~ interval + weekday, activity_fixed, mean)
-
-qplot(interval, steps, 
-      data = stepmeans, 
-      facets = weekday~., 
-      geom = c("line"), 
-      main = "Average Steps Taken During Weekdays and Weekends", 
-      ylab = "Average Steps", 
-      xlab = "Interval")
-```
