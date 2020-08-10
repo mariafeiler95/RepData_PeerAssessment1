@@ -70,3 +70,14 @@ weekdays_dt$weekday <- "weekday"
 
 activity_fixed <- rbind(weekend_dt, weekdays_dt)
 
+## Making time series panal plot of weekday vs weekend activity.
+library(ggplot2)
+stepmeans <- aggregate(steps ~ interval + weekday, activity_fixed, mean)
+
+qplot(interval, steps, 
+      data = stepmeans, 
+      facets = weekday~., 
+      geom = c("line"), 
+      main = "Average Steps Taken During Weekdays and Weekends", 
+      ylab = "Average Steps", 
+      xlab = "Interval")
